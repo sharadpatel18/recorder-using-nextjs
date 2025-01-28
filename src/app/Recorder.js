@@ -40,11 +40,12 @@ const Recorder = () => {
         setRecordedBlob(blob);
         videoBlobRef.current = URL.createObjectURL(blob); // Store the recorded video URL
         setIsRecording(false);
+        videoElementRef.current.srcObject = null;;
       };
 
       mediaRecorderRef.current.start();
       setIsRecording(true);
-      //videoElementRef.current.srcObject = combinedStream;
+      videoElementRef.current.srcObject = combinedStream;
     } catch (error) {
       console.error("Error starting the recording:", error);
     }
@@ -85,13 +86,14 @@ const Recorder = () => {
         mediaRecorderRef.current.onstop = () => {
           const blob = new Blob(chunks, { type: "video/webm" });
           setRecordedBlob(blob);
-          videoBlobRef.current = URL.createObjectURL(blob); // Create a URL for the recorded blob
+          videoBlobRef.current = URL.createObjectURL(blob); 
           setIsScreenRecording(false);
+          videoElementRef.current.srcObject = null;
         };
   
         mediaRecorderRef.current.start();
         setIsScreenRecording(true);
-      //  videoElementRef.current.srcObject = combinedStream; // Show live stream while recording
+        videoElementRef.current.srcObject = combinedStream; 
       } catch (error) {
         console.error("Error starting the recording:", error);
       }
@@ -104,10 +106,14 @@ const Recorder = () => {
 
   const handleDownload = () => {
     const url = URL.createObjectURL(recordedBlob);
+    const formData = new FormData();
+    formData.append("file", recordedBlob , "recording.webm");
+    
     const link = document.createElement("a");
     link.href = url;
     link.download = "recording.webm";
-    link.click();
+   // link.click();
+    console.log(url);
   };
 
   return (
