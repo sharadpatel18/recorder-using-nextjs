@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import { MyContext } from "@/context/MyContext";
+import Axios from "axios";
+import React, { useState, useRef, useContext } from "react";
 
 const Recorder = () => {
+  const {user} = useContext(MyContext);
   const [isRecording, setIsRecording] = useState(false);
   const [isScreenRecording, setIsScreenRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState(null);
@@ -104,16 +107,39 @@ const Recorder = () => {
     setIsScreenRecording(false);
   };
 
-  const handleDownload = () => {
-    const url = URL.createObjectURL(recordedBlob);
-    const formData = new FormData();
-    formData.append("file", recordedBlob , "recording.webm");
-    
+  const convertBlobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+    });
+  };
+
+  const handleDownload = async() => {
+    const url = URL.createObjectURL(recordedBlob); 
     const link = document.createElement("a");
     link.href = url;
     link.download = "recording.webm";
    // link.click();
     console.log(url);
+  };
+
+  const handleAddToDatabase = async () => {
+    if (recordedBlob) {
+      try {
+        const base64 = await convertBlobToBase64(recordedBlob);
+        console.log({ video:base64 , userId:user.userId});
+        const responce = await Axios.post(`/api/add-recording`, { video:base64 , userId:user.userId});
+        
+        console.log(responce.data);
+      
+      } catch (error) {
+        console.log(error.response.data);
+      }
+    }else{
+      alert("Please record a video first");
+    }
   };
 
   return (
@@ -149,10 +175,20 @@ const Recorder = () => {
       >
         Download Recording
       </button>
+      <button
+        className={`bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded ${
+          !recordedBlob ? "opacity-50 cursor-not-allowed" : ""
+        }`}
+        onClick={handleAddToDatabase}
+        disabled={!recordedBlob}
+      >
+        Save Recording In Database
+      </button>
       <video
         ref={videoElementRef}
         controls
         autoPlay
+        muted
         className="w-full max-w-lg"
         // After recording stops, we update the src to the recorded video
         src={recordedBlob ? URL.createObjectURL(recordedBlob) : undefined}
