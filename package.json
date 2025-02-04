@@ -14,11 +14,19 @@
     "dotenv": "^16.4.7",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^0.474.0",
     "mongoose": "^8.9.5",
+    "multer": "^1.4.5-lts.1",
     "next": "15.1.6",
+    "next-connect": "^1.0.0",
+    "next-video": "^2.0.4",
+    "plyr": "^3.7.8",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "recordrtc": "^5.6.2"
+    "react-icon": "^1.0.0",
+    "react-player": "^2.16.0",
+    "recordrtc": "^5.6.2",
+    "video.js": "^8.21.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

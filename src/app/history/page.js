@@ -1,16 +1,18 @@
 "use client";
 
 import { MyContext } from "@/context/MyContext";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState, useRef } from "react";
 import Axios from "axios";
+import VideoPlayer from "@/components/VideoPlayer";
+import { PlayCircle, X } from "lucide-react";
 
 export default function HistoryPage() {
   const { user } = useContext(MyContext);
+  const selectedVideoRef = useRef(null);
   const [videos, setVideos] = useState([]);
-  const [userData, setUserData] = useState({});
-  const [isModalOpen, setIsModalOpen] = useState(false); // Track modal state
-  const [selectedVideo, setSelectedVideo] = useState(null); // Track selected video
-  const [message, setMessage] = useState({ type: "", text: "" }); // Track backend messages
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [message, setMessage] = useState({ type: "", text: "" });
 
   useEffect(() => {
     if (user?.userId) {
@@ -30,76 +32,50 @@ export default function HistoryPage() {
     }
   }, [user]);
 
-  // Open the modal with the selected video
   const openModal = (video) => {
     setSelectedVideo(video);
     setIsModalOpen(true);
   };
 
-  // Close the modal
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedVideo(null);
   };
 
   return (
-    <div className="h-screen w-full bg-gray-100 flex justify-center items-center py-8">
-      <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg p-6 md:p-12 space-y-6">
-        <h1 className="text-4xl font-semibold text-center text-gray-800">Your Videos</h1>
-        <hr className="border-t-2 border-gray-200" />
-
-        {/* Display backend messages */}
+    <div className="min-h-screen bg-black text-white flex flex-col items-center py-8 px-4">
+      <div className="w-full max-w-6xl">
+        <h1 className="text-4xl font-bold mb-8 text-center">Your Videos</h1>
         {message.text && (
-          <div
-            className={`p-4 rounded-md text-center ${
-              message.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-            }`}
-          >
+          <div className={`p-4 rounded-md text-center ${message.type === "success" ? "bg-green-500" : "bg-red-500"}`}>
             {message.text}
           </div>
         )}
-
-        {videos.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {videos.map((video) => (
-              <div
-                key={video._id}
-                className="bg-gray-50 p-4 rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer"
-                onClick={() => openModal(video)} // Open modal on click
-              >
-                <video
-                  src={video.video}
-                  className="w-full h-48 object-cover rounded-md"
-                  controls
-                />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {videos.length > 0 ? (
+            videos.map((video) => (
+              <div key={video._id} className="relative group cursor-pointer my-5" onClick={() => openModal(video)}>
+                <video src={video.video} className="w-full h-48 object-cover rounded-lg shadow-lg" />
+                <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <PlayCircle className="text-white" size={60} />
+                </div>
+                <p className="mt-3 text-lg font-semibold text-center">{video.title || "Untitled Video"}</p>
               </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-lg text-gray-600">No videos available.</p>
-        )}
+            ))
+          ) : (
+            <div className="col-span-full flex justify-center items-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-white"></div>
+            </div>
+          )}
+        </div>
       </div>
-
-      {/* Modal to display video in fullscreen */}
       {isModalOpen && selectedVideo && (
-        <div
-          id="modal-overlay"
-          onClick={closeModal} // Close modal when overlay is clicked
-          className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50"
-        >
-          <div className="relative w-full h-full max-w-5xl max-h-screen">
-            <button
-              onClick={closeModal} // Close modal when close button is clicked
-              className="absolute top-4 right-4 text-red-900 text-3xl font-bold"
-            >
-              ×
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex justify-center items-center z-50 px-4">
+          <div className="relative w-full max-w-4xl">
+            <button onClick={closeModal} className="absolute top-4 right-4 text-white text-4xl font-bold">
+              <X />
             </button>
-            <video
-              src={selectedVideo.video}
-              className="w-full h-full object-contain"
-              controls
-              autoPlay
-            />
+            <VideoPlayer videoUrl={selectedVideo.video} />
           </div>
         </div>
       )}

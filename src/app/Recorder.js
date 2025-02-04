@@ -5,13 +5,13 @@ import Axios from "axios";
 import React, { useState, useRef, useContext } from "react";
 
 const Recorder = () => {
-  const {user} = useContext(MyContext);
+  const { user } = useContext(MyContext);
   const [isRecording, setIsRecording] = useState(false);
   const [isScreenRecording, setIsScreenRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState(null);
   const mediaRecorderRef = useRef(null);
   const videoElementRef = useRef(null);
-  const videoBlobRef = useRef(null); // This will hold the recorded blob URL
+  const videoBlobRef = useRef(null);
 
   const startRecording = async () => {
     try {
@@ -23,15 +23,9 @@ const Recorder = () => {
         video: true,
       });
 
-      // Merge the video and screen streams (if needed)
-      const combinedStream = new MediaStream([
-        ...videoStream.getTracks(),
-        ...screenStream.getTracks(),
-      ]);
+      const combinedStream = new MediaStream([...videoStream.getTracks(), ...screenStream.getTracks()]);
 
-      mediaRecorderRef.current = new MediaRecorder(combinedStream, {
-        mimeType: "video/webm",
-      });
+      mediaRecorderRef.current = new MediaRecorder(combinedStream, { mimeType: "video/webm" });
 
       const chunks = [];
       mediaRecorderRef.current.ondataavailable = (event) => {
@@ -41,9 +35,9 @@ const Recorder = () => {
       mediaRecorderRef.current.onstop = () => {
         const blob = new Blob(chunks, { type: "video/webm" });
         setRecordedBlob(blob);
-        videoBlobRef.current = URL.createObjectURL(blob); // Store the recorded video URL
+        videoBlobRef.current = URL.createObjectURL(blob);
         setIsRecording(false);
-        videoElementRef.current.srcObject = null;;
+        videoElementRef.current.srcObject = null;
       };
 
       mediaRecorderRef.current.start();
@@ -61,45 +55,38 @@ const Recorder = () => {
 
   const startScreenRecording = async () => {
     try {
-        // Get both screen and microphone audio streams
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-          audio: true, // Capture screen and audio
-        });
-        
-        const audioStream = await navigator.mediaDevices.getUserMedia({
-          audio: true, // Capture audio from microphone
-        });
-  
-        // Combine the screen and audio streams
-        const combinedStream = new MediaStream([
-          ...screenStream.getTracks(),  // Screen tracks
-          ...audioStream.getTracks(),   // Microphone tracks
-        ]);
-  
-        mediaRecorderRef.current = new MediaRecorder(combinedStream, {
-          mimeType: "video/webm", // Set mime type to webm for video
-        });
-  
-        const chunks = [];
-        mediaRecorderRef.current.ondataavailable = (event) => {
-          chunks.push(event.data);
-        };
-  
-        mediaRecorderRef.current.onstop = () => {
-          const blob = new Blob(chunks, { type: "video/webm" });
-          setRecordedBlob(blob);
-          videoBlobRef.current = URL.createObjectURL(blob); 
-          setIsScreenRecording(false);
-          videoElementRef.current.srcObject = null;
-        };
-  
-        mediaRecorderRef.current.start();
-        setIsScreenRecording(true);
-        videoElementRef.current.srcObject = combinedStream; 
-      } catch (error) {
-        console.error("Error starting the recording:", error);
-      }
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true,
+      });
+
+      const audioStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+
+      const combinedStream = new MediaStream([...screenStream.getTracks(), ...audioStream.getTracks()]);
+
+      mediaRecorderRef.current = new MediaRecorder(combinedStream, { mimeType: "video/webm" });
+
+      const chunks = [];
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        chunks.push(event.data);
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const blob = new Blob(chunks, { type: "video/webm" });
+        setRecordedBlob(blob);
+        videoBlobRef.current = URL.createObjectURL(blob);
+        setIsScreenRecording(false);
+        videoElementRef.current.srcObject = null;
+      };
+
+      mediaRecorderRef.current.start();
+      setIsScreenRecording(true);
+      videoElementRef.current.srcObject = combinedStream;
+    } catch (error) {
+      console.error("Error starting the recording:", error);
+    }
   };
 
   const stopScreenRecording = async () => {
@@ -116,83 +103,97 @@ const Recorder = () => {
     });
   };
 
-  const handleDownload = async() => {
-    const url = URL.createObjectURL(recordedBlob); 
+  const handleDownload = async () => {
+    const url = URL.createObjectURL(recordedBlob);
     const link = document.createElement("a");
     link.href = url;
     link.download = "recording.webm";
-   // link.click();
-    console.log(url);
+    link.click();
   };
 
   const handleAddToDatabase = async () => {
     if (recordedBlob) {
       try {
         const base64 = await convertBlobToBase64(recordedBlob);
-        console.log({ video:base64 , userId:user.userId});
-        const responce = await Axios.post(`/api/add-recording`, { video:base64 , userId:user.userId});
-        
-        console.log(responce.data);
-      
+        console.log({ video: base64, userId: user.userId });
+        const response = await Axios.post(`/api/add-recording`, {
+          video: base64,
+          userId: user.userId,
+        });
+
+        console.log(response.data);
       } catch (error) {
         console.log(error.response.data);
       }
-    }else{
+    } else {
       alert("Please record a video first");
     }
   };
 
   return (
-    <div className="flex flex-col items-center space-y-4">
-      <div className="flex space-x-4">
-        <button
-          className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ${
-            isRecording ? "bg-red-500" : ""
-          }`}
-          onClick={isRecording ? stopRecording : startRecording}
-        >
-          {isRecording ? "Stop Audio + Screen" : "Start Audio + Screen"}
-        </button>
-        <button
-          className={`bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded ${
-            isScreenRecording ? "bg-red-500" : ""
-          }`}
-          onClick={
-            isScreenRecording ? stopScreenRecording : startScreenRecording
-          }
-        >
-          {isScreenRecording
-            ? "Stop Screen Recording"
-            : "Start Screen Recording"}
-        </button>
+    <div className="flex flex-col items-center space-y-6 bg-gray-900 h-full py-10 text-white">
+      <div className="flex flex-col items-center space-y-6 w-full max-w-3xl mx-auto">
+        <h1 className="text-3xl font-bold text-red-600">YouTube Recorder</h1>
+
+        {/* Video Preview */}
+        <div className="relative w-full max-w-lg">
+          <video
+            ref={videoElementRef}
+            controls
+            autoPlay
+            muted
+            className="w-full rounded-lg shadow-lg"
+            src={recordedBlob ? URL.createObjectURL(recordedBlob) : undefined}
+          />
+          {isRecording || isScreenRecording ? (
+            <div className="absolute inset-0 flex justify-center items-center bg-black opacity-50 rounded-lg">
+              <span className="text-3xl text-white font-bold">Recording...</span>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Control Buttons */}
+        <div className="flex space-x-6">
+          <button
+            className={`px-6 py-3 rounded-lg text-lg font-semibold transition-all ${
+              isRecording ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700"
+            }`}
+            onClick={isRecording ? stopRecording : startRecording}
+          >
+            {isRecording ? "Stop Recording" : "Start Recording"}
+          </button>
+          <button
+            className={`px-6 py-3 rounded-lg text-lg font-semibold transition-all ${
+              isScreenRecording ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"
+            }`}
+            onClick={isScreenRecording ? stopScreenRecording : startScreenRecording}
+          >
+            {isScreenRecording ? "Stop Screen Recording" : "Start Screen Recording"}
+          </button>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex space-x-6 mt-4">
+          <button
+            className={`px-6 py-3 rounded-lg text-lg font-semibold transition-all bg-gray-700 hover:bg-gray-800 ${
+              !recordedBlob ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            onClick={handleDownload}
+            disabled={!recordedBlob}
+          >
+            Download
+          </button>
+          <button
+            className={`px-6 py-3 rounded-lg text-lg font-semibold transition-all bg-gray-700 hover:bg-gray-800 ${
+              !recordedBlob ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            onClick={handleAddToDatabase}
+            disabled={!recordedBlob}
+          >
+            Save to Database
+          </button>
+        </div>
       </div>
-      <button
-        className={`bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded ${
-          !recordedBlob ? "opacity-50 cursor-not-allowed" : ""
-        }`}
-        onClick={handleDownload}
-        disabled={!recordedBlob}
-      >
-        Download Recording
-      </button>
-      <button
-        className={`bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded ${
-          !recordedBlob ? "opacity-50 cursor-not-allowed" : ""
-        }`}
-        onClick={handleAddToDatabase}
-        disabled={!recordedBlob}
-      >
-        Save Recording In Database
-      </button>
-      <video
-        ref={videoElementRef}
-        controls
-        autoPlay
-        muted
-        className="w-full max-w-lg"
-        // After recording stops, we update the src to the recorded video
-        src={recordedBlob ? URL.createObjectURL(recordedBlob) : undefined}
-      />
     </div>
   );
 };
