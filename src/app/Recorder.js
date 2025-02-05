@@ -9,10 +9,10 @@ const Recorder = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isScreenRecording, setIsScreenRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState(null);
+  const [message , setMessage] = useState('');
   const mediaRecorderRef = useRef(null);
   const videoElementRef = useRef(null);
   const videoBlobRef = useRef(null);
-
   const startRecording = async () => {
     try {
       const videoStream = await navigator.mediaDevices.getUserMedia({
@@ -122,8 +122,10 @@ const Recorder = () => {
         });
 
         console.log(response.data);
+        setMessage(response.data.message);
       } catch (error) {
         console.log(error.response.data);
+        setMessage(error.response.data.message);
       }
     } else {
       alert("Please record a video first");
@@ -193,6 +195,13 @@ const Recorder = () => {
             Save to Database
           </button>
         </div>
+
+        {/* Message */}
+        {message && (
+          <div className={`mt-4 text-center text-lg font-semibold ${message.type === "success" ? "text-green-500" : "text-red-500"}`}>
+            {message}
+          </div>
+        )}
       </div>
     </div>
   );

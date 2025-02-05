@@ -47,7 +47,7 @@ export default function Navbar() {
                         {/* Right Section: User Info and Login/Logout */}
                         <div className="flex items-center space-x-6">
                             {user ? (
-                                <Link href="/auth/login" className="flex items-center text-gray-300 hover:text-white">
+                                <Link href="/profile" className="flex items-center text-gray-300 hover:text-white">
                                     <User className="mr-2" /> {/* Replaced FaUserCircle with User from lucide-react */}
                                     <span className="text-lg">{user.username}</span>
                                 </Link>
